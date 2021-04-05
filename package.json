@@ -1,0 +1,11 @@
+{
+  "name": "ethers-onekey",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "itoukaiji <itoukai@tutanota.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@onekeyhq/connect": "^8.1.26-extended",
+    "ethers": "^5.1.0"
+  }
+}
