@@ -1,14 +1,14 @@
 import { ethers } from "ethers";
-import { default as TrezorConnect, UI, UI_EVENT } from "@onekeyhq/connect";
+import { default as OnekeyConnect, UI, UI_EVENT } from "@onekeyhq/connect";
 // import  TrezorConnect  from "@onekeyhq/connect";
 
-const defaultPath = "m/44'/60'/0'/0/1";
+const defaultPath = "m/44'/60'/0'/0/0";
 
 export class OnekeySigner extends ethers.Signer {
     readonly path: string
 
     static async create(provider?: ethers.providers.Provider, path?: string): Promise<OnekeySigner> {
-        await TrezorConnect.init({
+        await OnekeyConnect.init({
             connectSrc: 'https://localhost:8088/',
             lazyLoad: true, // this param will prevent iframe injection until TrezorConnect.method will be called
             manifest: {
@@ -20,10 +20,10 @@ export class OnekeySigner extends ethers.Signer {
 
     // without this listener, the passphrase, if enabled, would be infinitely awaited
     // to be inserted in the browser, see https://github.com/trezor/connect/issues/714
-        TrezorConnect.on(UI_EVENT, (event) => {
-            if (event.type === UI.REQUEST_PIN) {
-                if (event.payload.device.features.capabilities.includes('Capability_PassphraseEntry')) {
-                    TrezorConnect.uiResponse({
+        OnekeyConnect.on(UI_EVENT, (event) => {
+            if (event.type === UI.REQUEST_PASSPHRASE ) {
+                if (event.payload.device.features!.capabilities.includes('Capability_PassphraseEntry')) {
+                    OnekeyConnect.uiResponse({
                         type: UI.RECEIVE_PASSPHRASE,
                         payload: {
                             passphraseOnDevice: true,
@@ -32,8 +32,10 @@ export class OnekeySigner extends ethers.Signer {
                         },
                     })
                 } else {
-                    throw Error('Trezor passphrase not insertable on the device');
+                    throw Error('Onekey passphrase not insertable on the device');
                 }
+            } else if (event.type === UI.REQUEST_PIN) {
+                throw Error('Onekey passphrase not insertable on the device');
             }
         })
 
@@ -46,7 +48,7 @@ export class OnekeySigner extends ethers.Signer {
         if (path == null) { path = defaultPath; }
 
         ethers.utils.defineReadOnly(this, "path", path);
-        ethers.utils.defineReadOnly(this, "provider", provider || null);
+        ethers.utils.defineReadOnly(this, "provider", provider || undefined);
 
 
 
@@ -57,7 +59,7 @@ export class OnekeySigner extends ethers.Signer {
     }
 
     async getAddress(): Promise<string> {
-        let result = await TrezorConnect.ethereumGetAddress({ path: this.path });
+        let result = await OnekeyConnect.ethereumGetAddress({ path: this.path });
         if(result.success) {
             return result.payload.address;
         } else {
@@ -67,7 +69,20 @@ export class OnekeySigner extends ethers.Signer {
     }
 
     async signMessage(message: ethers.utils.Bytes | string): Promise<string> { 
-        return "";
+        let msg = typeof message === 'string'? message: ethers.utils.hexlify(message);
+        let isHex = typeof message === 'string' ? false: true;
+
+        let result = await OnekeyConnect.ethereumSignMessage({
+            path: this.path,
+            message: msg,
+            hex: isHex
+
+        });
+        if(result.success) {
+            return '0x' + result.payload.signature!;
+        } else {
+            throw Error(result.payload['error']);
+        }
     }
 
     async signTransaction(transaction: ethers.providers.TransactionRequest): Promise<string> {

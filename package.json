@@ -4,12 +4,17 @@
   "main": "index.js",
   "author": "itoukaiji <itoukai@tutanota.com>",
   "license": "MIT",
+  "scripts": { "test": "mocha -r ts-node/register test.ts --timeout 60000" },
   "dependencies": {
     "@onekeyhq/connect": "^8.1.26-extended",
     "ethers": "^5.1.0",
     "typescript": "^4.2.3"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.16",
+    "@types/mocha": "^8.2.2",
+    "chai": "^4.3.4",
+    "mocha": "^8.3.2",
     "ts-node": "^9.1.1"
   }
 }
