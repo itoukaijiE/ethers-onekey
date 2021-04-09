@@ -4,7 +4,7 @@
   "main": "index.js",
   "author": "itoukaiji <itoukai@tutanota.com>",
   "license": "MIT",
-  "scripts": { "test": "mocha -r ts-node/register test.ts --timeout 60000" },
+  "scripts": { "test": "mocha -r ts-node/register test.ts --timeout 100000" },
   "dependencies": {
     "@onekeyhq/connect": "^8.1.26-extended",
     "ethers": "^5.1.0",

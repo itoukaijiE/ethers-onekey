@@ -46,12 +46,8 @@ export class OnekeySigner extends ethers.Signer {
     constructor(provider?: ethers.providers.Provider, path?: string) {
         super();
         if (path == null) { path = defaultPath; }
-
         ethers.utils.defineReadOnly(this, "path", path);
         ethers.utils.defineReadOnly(this, "provider", provider || undefined);
-
-
-
     }
 
     connect(provider: ethers.providers.Provider): ethers.Signer {
@@ -65,18 +61,15 @@ export class OnekeySigner extends ethers.Signer {
         } else {
             throw Error(result.payload['error']);
         }
-
     }
 
     async signMessage(message: ethers.utils.Bytes | string): Promise<string> { 
         let msg = typeof message === 'string'? message: ethers.utils.hexlify(message);
         let isHex = typeof message === 'string' ? false: true;
-
         let result = await OnekeyConnect.ethereumSignMessage({
             path: this.path,
             message: msg,
             hex: isHex
-
         });
         if(result.success) {
             return '0x' + result.payload.signature!;
@@ -86,6 +79,56 @@ export class OnekeySigner extends ethers.Signer {
     }
 
     async signTransaction(transaction: ethers.providers.TransactionRequest): Promise<string> {
-        return "";
+        transaction = await this.populateTransaction(transaction);
+        let baseTx: ethers.utils.UnsignedTransaction = {
+            chainId: (transaction.chainId || undefined),
+            data: (transaction.data || undefined),
+            gasLimit: (transaction.gasLimit || undefined),
+            gasPrice: (transaction.gasPrice || undefined),
+            nonce: (transaction.nonce ? ethers.BigNumber.from(transaction.nonce).toNumber(): undefined),
+            to: (transaction.to || undefined),
+            value: (transaction.value || undefined),
+        };
+        let tx = {
+            to: transaction.to!,
+            value: '',
+            data: '',
+            chainId: transaction.chainId!,
+            nonce: ethers.utils.hexlify(transaction.nonce!),
+            gasLimit: ethers.utils.hexlify(transaction.gasLimit!),
+            gasPrice: ethers.utils.hexlify(transaction.gasPrice!)
+        }
+
+        if (typeof transaction.data === 'string' ) {
+            tx.data = transaction.data;
+        } else if ( ethers.utils.isBytesLike(transaction.data) ) {
+            tx.data = ethers.utils.hexlify(transaction.data);
+        } else  { // transaction.data === undefined
+            tx.data = "0x";
+        }
+
+        if (typeof transaction.value === 'string' ) {
+            tx.value = transaction.value;
+        } else if ( transaction.value === undefined ) {
+            tx.value = "0x";
+        } else  { // ethers.utils.isBytesLike(transaction.value)
+            tx.value = ethers.utils.hexlify(transaction.value);
+        }
+
+
+        let result = await OnekeyConnect.ethereumSignTransaction({
+            path: this.path,
+            transaction: tx
+        });
+        
+        if(result.success) {
+            return ethers.utils.serializeTransaction(baseTx, {
+                v: ethers.BigNumber.from(result.payload.v).toNumber(),
+                r: result.payload.r,
+                s: result.payload.s,
+        });
+        } else {
+            throw Error(result.payload['error']);
+        };
     }
 }
