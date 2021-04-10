@@ -1,4 +1,4 @@
-import { OnekeySigner } from './onekey'
+import { OnekeySigner } from '../src/index'
 import { ethers } from 'ethers';
 import chai, { expect } from 'chai';
 
