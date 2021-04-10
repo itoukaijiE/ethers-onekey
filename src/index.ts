@@ -1,6 +1,5 @@
 import { ethers } from "ethers";
 import { default as OnekeyConnect, UI, UI_EVENT } from "@onekeyhq/connect";
-// import  TrezorConnect  from "@onekeyhq/connect";
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
@@ -35,7 +34,7 @@ export class OnekeySigner extends ethers.Signer {
                     throw Error('Onekey passphrase not insertable on the device');
                 }
             } else if (event.type === UI.REQUEST_PIN) {
-                throw Error('Onekey passphrase not insertable on the device');
+                throw Error('Onekey pin not insertable on the device');
             }
         })
 
@@ -90,7 +89,7 @@ export class OnekeySigner extends ethers.Signer {
             value: (transaction.value || undefined),
         };
         let tx = {
-            to: transaction.to!,
+            to: transaction.to || '',
             value: '',
             data: '',
             chainId: transaction.chainId!,
